@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../services/db';
 import { Enrollment, Student, Course, EnrichedEnrollment } from '../types';
-import { Plus, Pencil, Trash2, X, Check, Download } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Check, Download, Search } from 'lucide-react';
 
 const Enrollments: React.FC = () => {
   const [enrollments, setEnrollments] = useState<EnrichedEnrollment[]>([]);
+  const [filteredEnrollments, setFilteredEnrollments] = useState<EnrichedEnrollment[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [students, setStudents] = useState<Student[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [isEditing, setIsEditing] = useState(false);
@@ -13,6 +15,18 @@ const Enrollments: React.FC = () => {
   useEffect(() => {
     refreshData();
   }, []);
+
+  useEffect(() => {
+    const lowerTerm = searchTerm.toLowerCase();
+    setFilteredEnrollments(
+      enrollments.filter(
+        e =>
+          e.studentName.toLowerCase().includes(lowerTerm) ||
+          e.courseName.toLowerCase().includes(lowerTerm) ||
+          e.semester.toLowerCase().includes(lowerTerm)
+      )
+    );
+  }, [searchTerm, enrollments]);
 
   const refreshData = () => {
     const rawEnrollments = db.getEnrollments();
@@ -93,142 +107,173 @@ const Enrollments: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-2xl font-bold text-slate-800">Enrollment Records</h2>
-        <div className="flex gap-2">
-            <button
-            onClick={exportReport}
-            className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors border border-slate-300"
-            >
-            <Download size={18} /> Export CSV
-            </button>
-            <button
-            onClick={handleAdd}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-            >
-            <Plus size={18} /> Enroll Student
-            </button>
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+             <div className="relative flex-1 sm:flex-initial">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input 
+                type="text" 
+                placeholder="Search enrollments..." 
+                className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-64"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
+            <div className="flex gap-2">
+                <button
+                onClick={exportReport}
+                className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors border border-slate-300 shadow-sm"
+                >
+                <Download size={18} /> <span className="hidden sm:inline">Export CSV</span>
+                </button>
+                <button
+                onClick={handleAdd}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm"
+                >
+                <Plus size={18} /> <span className="hidden sm:inline">Enroll Student</span>
+                </button>
+            </div>
         </div>
       </div>
 
       {isEditing && (
-        <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 shadow-inner">
-           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Student</label>
-                <select
-                  required
-                  className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-                  value={formData.studentId}
-                  onChange={e => setFormData({ ...formData, studentId: e.target.value })}
-                >
-                    {students.map(s => <option key={s.id} value={s.id}>{s.fullName} ({s.email})</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Course</label>
-                <select
-                  required
-                  className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-                  value={formData.courseId}
-                  onChange={e => setFormData({ ...formData, courseId: e.target.value })}
-                >
-                    {courses.map(c => <option key={c.id} value={c.id}>{c.courseName} ({c.department})</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Semester</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Fall 2024"
-                  className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-                  value={formData.semester}
-                  onChange={e => setFormData({ ...formData, semester: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Grade</label>
-                <select
-                  required
-                  className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-                  value={formData.grade}
-                  onChange={e => setFormData({ ...formData, grade: e.target.value })}
-                >
-                    <option value="Pending">Pending</option>
-                    <option value="A">A</option>
-                    <option value="B+">B+</option>
-                    <option value="B">B</option>
-                    <option value="C+">C+</option>
-                    <option value="C">C</option>
-                    <option value="D">D</option>
-                    <option value="F">F</option>
-                </select>
-              </div>
-              <div className="md:col-span-2 flex justify-end gap-3 mt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(false)}
-                  className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg flex items-center gap-2"
-                >
-                  <X size={18} /> Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2"
-                >
-                  <Check size={18} /> Save
-                </button>
-              </div>
-           </form>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+             <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+               <h3 className="font-bold text-lg text-slate-800">{formData.id && enrollments.find(e => e.id === formData.id) ? 'Edit Enrollment' : 'New Enrollment'}</h3>
+               <button onClick={() => setIsEditing(false)} className="text-slate-400 hover:text-slate-600">
+                 <X size={20} />
+               </button>
+             </div>
+             <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Student</label>
+                        <select
+                        required
+                        className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white transition-shadow"
+                        value={formData.studentId}
+                        onChange={e => setFormData({ ...formData, studentId: e.target.value })}
+                        >
+                            {students.map(s => <option key={s.id} value={s.id}>{s.fullName} ({s.email})</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Course</label>
+                        <select
+                        required
+                        className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white transition-shadow"
+                        value={formData.courseId}
+                        onChange={e => setFormData({ ...formData, courseId: e.target.value })}
+                        >
+                            {courses.map(c => <option key={c.id} value={c.id}>{c.courseName} ({c.department})</option>)}
+                        </select>
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Semester</label>
+                        <input
+                        type="text"
+                        required
+                        placeholder="e.g. Fall 2024"
+                        className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-shadow"
+                        value={formData.semester}
+                        onChange={e => setFormData({ ...formData, semester: e.target.value })}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Grade</label>
+                        <select
+                        required
+                        className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white transition-shadow"
+                        value={formData.grade}
+                        onChange={e => setFormData({ ...formData, grade: e.target.value })}
+                        >
+                            <option value="Pending">Pending</option>
+                            <option value="A">A</option>
+                            <option value="B+">B+</option>
+                            <option value="B">B</option>
+                            <option value="C+">C+</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                            <option value="F">F</option>
+                        </select>
+                    </div>
+                </div>
+                <div className="flex justify-end gap-3 pt-4">
+                    <button
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium"
+                    >
+                    Cancel
+                    </button>
+                    <button
+                    type="submit"
+                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 font-medium shadow-md shadow-blue-600/20"
+                    >
+                    <Check size={18} /> Save Record
+                    </button>
+                </div>
+             </form>
+           </div>
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow border border-slate-200 overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-slate-100 border-b border-slate-200">
-            <tr>
-              <th className="p-4 font-semibold text-slate-600">ID</th>
-              <th className="p-4 font-semibold text-slate-600">Student</th>
-              <th className="p-4 font-semibold text-slate-600">Course</th>
-              <th className="p-4 font-semibold text-slate-600">Semester</th>
-              <th className="p-4 font-semibold text-slate-600">Grade</th>
-              <th className="p-4 font-semibold text-slate-600 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {enrollments.map(enrollment => (
-              <tr key={enrollment.id} className="hover:bg-slate-50 transition-colors">
-                <td className="p-4 text-slate-500 font-mono text-sm">#{enrollment.id}</td>
-                <td className="p-4 font-medium text-slate-800">{enrollment.studentName}</td>
-                <td className="p-4 text-slate-600">{enrollment.courseName}</td>
-                <td className="p-4 text-slate-600">{enrollment.semester}</td>
-                <td className="p-4">
-                  <span className={`px-2 py-1 rounded text-xs font-bold ${
-                    enrollment.grade === 'A' ? 'bg-green-100 text-green-700' :
-                    enrollment.grade === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-slate-100 text-slate-600'
-                  }`}>
-                    {enrollment.grade}
-                  </span>
-                </td>
-                <td className="p-4 text-right">
-                  <div className="flex justify-end gap-2">
-                    <button onClick={() => handleEdit(enrollment)} className="p-2 text-blue-600 hover:bg-blue-50 rounded">
-                      <Pencil size={18} />
-                    </button>
-                    <button onClick={() => handleDelete(enrollment.id)} className="p-2 text-red-600 hover:bg-red-50 rounded">
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {enrollments.length === 0 && (
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <td colSpan={6} className="p-8 text-center text-slate-400">No enrollments found.</td>
+                <th className="p-4 font-semibold text-slate-600 text-sm uppercase tracking-wider">ID</th>
+                <th className="p-4 font-semibold text-slate-600 text-sm uppercase tracking-wider">Student</th>
+                <th className="p-4 font-semibold text-slate-600 text-sm uppercase tracking-wider">Course</th>
+                <th className="p-4 font-semibold text-slate-600 text-sm uppercase tracking-wider">Semester</th>
+                <th className="p-4 font-semibold text-slate-600 text-sm uppercase tracking-wider">Grade</th>
+                <th className="p-4 font-semibold text-slate-600 text-sm uppercase tracking-wider text-right">Actions</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredEnrollments.map(enrollment => (
+                <tr key={enrollment.id} className="hover:bg-slate-50 transition-colors group">
+                  <td className="p-4 text-slate-500 font-mono text-sm">#{enrollment.id}</td>
+                  <td className="p-4 font-medium text-slate-800">{enrollment.studentName}</td>
+                  <td className="p-4 text-slate-600">{enrollment.courseName}</td>
+                  <td className="p-4 text-slate-600">{enrollment.semester}</td>
+                  <td className="p-4">
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
+                        enrollment.grade === 'A' ? 'bg-green-100 text-green-700 border-green-200' :
+                        enrollment.grade === 'Pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                        'bg-slate-100 text-slate-600 border-slate-200'
+                    }`}>
+                        {enrollment.grade}
+                    </span>
+                  </td>
+                  <td className="p-4 text-right">
+                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => handleEdit(enrollment)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors" title="Edit">
+                        <Pencil size={18} />
+                      </button>
+                      <button onClick={() => handleDelete(enrollment.id)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors" title="Delete">
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filteredEnrollments.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="p-12 text-center text-slate-400">
+                    <div className="flex flex-col items-center gap-2">
+                        <Search size={32} className="opacity-20" />
+                        <p>No enrollments found matching your search.</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
