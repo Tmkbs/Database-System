@@ -1,0 +1,5 @@
+{
+  "name": "Academic Records System",
+  "description": "A web-based implementation of a Student Management System featuring real-time database simulation, CRUD operations for 3 related entities, and report exporting.",
+  "requestFramePermissions": []
+}
