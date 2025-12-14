@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Users, BookOpen, GraduationCap } from 'lucide-react';
+import { Users, BookOpen, GraduationCap, Code, Database, AlertCircle } from 'lucide-react';
 import { db } from '../services/db';
 
 const Dashboard: React.FC = () => {
@@ -32,6 +32,31 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Assignment Info Banner */}
+      <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 flex items-start gap-4 shadow-sm">
+        <div className="bg-yellow-100 p-3 rounded-full text-yellow-700 mt-1">
+            <AlertCircle size={24} />
+        </div>
+        <div>
+            <h3 className="text-lg font-bold text-yellow-900">Project Source Code Available</h3>
+            <p className="text-yellow-800 mt-1">
+                You are currently viewing the <strong>Web Demo</strong>. 
+                Per your assignment requirements, the <strong>Python (Tkinter)</strong> source code and <strong>MySQL Schema</strong> have been generated for you.
+            </p>
+            <div className="flex gap-4 mt-4">
+                <div className="flex items-center gap-2 bg-white px-3 py-2 rounded border border-yellow-200 text-sm font-mono text-slate-700">
+                    <Code size={16} /> desktop_app.py
+                </div>
+                <div className="flex items-center gap-2 bg-white px-3 py-2 rounded border border-yellow-200 text-sm font-mono text-slate-700">
+                    <Database size={16} /> schema.sql
+                </div>
+            </div>
+            <p className="text-sm text-yellow-700 mt-3">
+                Download these files from the file explorer to run them on your local machine with Python & MySQL.
+            </p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
           <div className="p-4 bg-blue-100 text-blue-600 rounded-full">
@@ -65,7 +90,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <h3 className="text-lg font-bold text-slate-800 mb-6">Course Popularity</h3>
+        <h3 className="text-lg font-bold text-slate-800 mb-6">Course Popularity (Live Data)</h3>
         <div className="h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
